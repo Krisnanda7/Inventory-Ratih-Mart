@@ -7,40 +7,105 @@ use Illuminate\Http\Request;
 
 class BarangController extends Controller
 {
-    //
-    public function index()
+    public function index(Request $request)
     {
-        $barang = Barang::all();
-        return view('barang.index', compact('barang'));
+        $query = Barang::query();
+
+        // Filter stok rendah
+        if ($request->get('filter') === 'low_stock') {
+            $query->whereColumn('stok', '<=', 'stok_minimum');
+        }
+
+        // Filter kategori
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
+        }
+
+        // Pencarian
+        if ($request->filled('search')) {
+            $q = $request->search;
+            $query->where(function ($q2) use ($q) {
+                $q2->where('nama_barang', 'like', "%{$q}%")
+                   ->orWhere('kode_barang', 'like', "%{$q}%");
+            });
+        }
+
+        $barang   = $query->orderBy('nama_barang')->paginate(20)->withQueryString();
+        $kategori = Barang::select('kategori')->distinct()->whereNotNull('kategori')->pluck('kategori');
+        $stockAlertCount = Barang::whereColumn('stok', '<=', 'stok_minimum')->count();
+
+        return view('barang.index', compact('barang', 'kategori', 'stockAlertCount'))
+            ->with('title', 'Data Barang');
     }
 
     public function create()
     {
-        return view('barang.create');
+        $kategori = Barang::select('kategori')->distinct()->whereNotNull('kategori')->pluck('kategori');
+        return view('barang.create', compact('kategori'))->with('title', 'Tambah Barang');
     }
 
     public function store(Request $request)
     {
-        Barang::create($request->all());
-        return redirect('/barang');
+        $validated = $request->validate([
+            'kode_barang'   => 'required|string|max:20|unique:barang',
+            'nama_barang'   => 'required|string|max:150',
+            'kategori'      => 'nullable|string|max:60',
+            'satuan'        => 'required|string|max:20',
+            'harga_beli'    => 'required|integer|min:0',
+            'harga_jual'    => 'required|integer|min:0',
+            'stok'          => 'required|integer|min:0',
+            'stok_minimum'  => 'required|integer|min:0',
+            'deskripsi'     => 'nullable|string',
+        ]);
+
+        Barang::create($validated);
+
+        return redirect()->route('barang.index')
+            ->with('success', "Barang \"{$validated['nama_barang']}\" berhasil ditambahkan.");
     }
 
-    public function edit($id)
+    public function show(Barang $barang)
     {
-        $barang = Barang::findOrFail($id);
-        return view('barang.edit', compact('barang'));
+        return view('barang.show', compact('barang'))->with('title', $barang->nama_barang);
     }
 
-    public function update(Request $request, $id)
+    public function edit(Barang $barang)
     {
-        $barang = Barang::findOrFail($id);
-        $barang->update($request->all());
-        return redirect('/barang');
+        $kategori = Barang::select('kategori')->distinct()->whereNotNull('kategori')->pluck('kategori');
+        return view('barang.edit', compact('barang', 'kategori'))->with('title', 'Edit Barang');
     }
 
-    public function destroy($id)
+    public function update(Request $request, Barang $barang)
     {
-        Barang::destroy($id);
-        return redirect('/barang');
+        $validated = $request->validate([
+            'kode_barang'   => 'required|string|max:20|unique:barang,kode_barang,' . $barang->id,
+            'nama_barang'   => 'required|string|max:150',
+            'kategori'      => 'nullable|string|max:60',
+            'satuan'        => 'required|string|max:20',
+            'harga_beli'    => 'required|integer|min:0',
+            'harga_jual'    => 'required|integer|min:0',
+            'stok'          => 'required|integer|min:0',
+            'stok_minimum'  => 'required|integer|min:0',
+            'deskripsi'     => 'nullable|string',
+        ]);
+
+        $barang->update($validated);
+
+        return redirect()->route('barang.index')
+            ->with('success', "Barang \"{$barang->nama_barang}\" berhasil diperbarui.");
+    }
+
+    public function destroy(Barang $barang)
+    {
+        // Cek apakah barang pernah ada di transaksi
+        if ($barang->detailTransaksi()->exists()) {
+            return back()->with('error', "Barang \"{$barang->nama_barang}\" tidak dapat dihapus karena sudah ada dalam transaksi.");
+        }
+
+        $nama = $barang->nama_barang;
+        $barang->delete();
+
+        return redirect()->route('barang.index')
+            ->with('success', "Barang \"{$nama}\" berhasil dihapus.");
     }
 }

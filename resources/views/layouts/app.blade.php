@@ -1,36 +1,429 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ $title ?? 'Dashboard' }} — Toko Ratih</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        :root {
+            --brand: #185FA5;
+            --brand-light: #E6F1FB;
+            --sidebar-width: 220px;
+            --topbar-height: 52px;
+            --font: 'Plus Jakarta Sans', sans-serif;
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --border: 1px solid #E8E8E4;
+            --bg-page: #F5F5F2;
+            --bg-white: #FFFFFF;
+            --bg-hover: #F0F0EC;
+            --text-primary: #1A1A18;
+            --text-secondary: #6B6B67;
+            --text-muted: #9B9B96;
+            --success-bg: #EAF3DE; --success-text: #3B6D11;
+            --warning-bg: #FAEEDA; --warning-text: #854F0B;
+            --danger-bg: #FCEBEB; --danger-text: #A32D2D;
+            --info-bg: #E6F1FB; --info-text: #185FA5;
+        }
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        body {
+            font-family: var(--font);
+            background: var(--bg-page);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+            display: flex;
+            min-height: 100vh;
+        }
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-    </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
-            @include('layouts.navigation')
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-white);
+            border-right: var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+        .sidebar-brand {
+            padding: 18px 16px 14px;
+            border-bottom: var(--border);
+        }
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 2px;
+        }
+        .brand-icon {
+            width: 30px; height: 30px;
+            background: var(--brand);
+            border-radius: var(--radius-md);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .brand-icon svg { display: block; }
+        .brand-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+        .brand-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; padding-left: 39px; }
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+        .nav-section { padding: 10px 0; }
+        .nav-section + .nav-section { border-top: var(--border); }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            padding: 4px 16px 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 7px 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-left: 2px solid transparent;
+            transition: background 0.12s, color 0.12s;
+            cursor: pointer;
+        }
+        .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .nav-item.active {
+            color: var(--brand);
+            background: var(--brand-light);
+            border-left-color: var(--brand);
+            font-weight: 500;
+        }
+        .nav-item svg { flex-shrink: 0; }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            font-size: 10px;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 10px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            border-top: var(--border);
+            padding: 10px 16px;
+        }
+        .sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 6px 0;
+        }
+        .user-avatar {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: var(--brand-light);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--brand);
+            flex-shrink: 0;
+        }
+        .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+        .user-role { font-size: 11px; color: var(--text-muted); }
+
+        /* ── MAIN ── */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* ── TOPBAR ── */
+        .topbar {
+            height: var(--topbar-height);
+            background: var(--bg-white);
+            border-bottom: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-left { display: flex; align-items: center; gap: 6px; }
+        .topbar-breadcrumb {
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .topbar-breadcrumb .sep { color: var(--text-muted); }
+        .topbar-breadcrumb .current { color: var(--text-primary); font-weight: 500; }
+
+        .topbar-right { display: flex; align-items: center; gap: 14px; }
+        .topbar-date { font-size: 12px; color: var(--text-muted); }
+
+        .notif-btn {
+            position: relative;
+            width: 32px; height: 32px;
+            border: var(--border);
+            border-radius: var(--radius-md);
+            background: none;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-secondary);
+            transition: background 0.12s;
+        }
+        .notif-btn:hover { background: var(--bg-hover); }
+        .notif-dot {
+            position: absolute;
+            top: 6px; right: 6px;
+            width: 7px; height: 7px;
+            background: #E24B4A;
+            border-radius: 50%;
+            border: 1.5px solid var(--bg-white);
+        }
+
+        /* ── PAGE CONTENT ── */
+        .page-content { padding: 22px 24px; flex: 1; }
+
+        /* ── SHARED COMPONENTS ── */
+        .card {
+            background: var(--bg-white);
+            border: var(--border);
+            border-radius: var(--radius-lg);
+        }
+        .card-body { padding: 16px 18px; }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: var(--border);
+        }
+        .card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .card-action {
+            font-size: 12px;
+            color: var(--brand);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .card-action:hover { text-decoration: underline; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-success { background: var(--success-bg); color: var(--success-text); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning-text); }
+        .badge-danger { background: var(--danger-bg); color: var(--danger-text); }
+        .badge-info { background: var(--info-bg); color: var(--info-text); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 500;
+            font-family: var(--font);
+            cursor: pointer;
+            border: var(--border);
+            text-decoration: none;
+            transition: background 0.12s;
+        }
+        .btn-primary {
+            background: var(--brand);
+            color: #fff;
+            border-color: var(--brand);
+        }
+        .btn-primary:hover { background: #1452890; }
+        .btn-outline { background: var(--bg-white); color: var(--text-secondary); }
+        .btn-outline:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+        /* ── ALERTS ── */
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            font-size: 12.5px;
+            margin-bottom: 18px;
+        }
+        .alert-warning { background: var(--warning-bg); color: var(--warning-text); border: 1px solid #FAC775; }
+        .alert-danger  { background: var(--danger-bg);  color: var(--danger-text);  border: 1px solid #F7C1C1; }
+        .alert-success { background: var(--success-bg); color: var(--success-text); border: 1px solid #C0DD97; }
+    </style>
+    @stack('styles')
+</head>
+<body>
+
+{{-- ── SIDEBAR ── --}}
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <div class="brand-logo">
+            <div class="brand-icon">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 6l6-4 6 4v7H2V6z" fill="white" opacity="0.9"/>
+                    <rect x="5.5" y="9" width="5" height="4" rx="0.5" fill="#185FA5"/>
+                </svg>
+            </div>
+            <span class="brand-name">Toko Ratih</span>
         </div>
-    </body>
+        <div class="brand-sub">Sistem Manajemen Grosir</div>
+    </div>
+
+    <nav>
+        <div class="nav-section">
+            <div class="nav-label">Utama</div>
+            <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="1" width="6" height="6" rx="1.2" fill="currentColor" opacity="0.9"/>
+                    <rect x="9" y="1" width="6" height="6" rx="1.2" fill="currentColor" opacity="0.5"/>
+                    <rect x="1" y="9" width="6" height="6" rx="1.2" fill="currentColor" opacity="0.5"/>
+                    <rect x="9" y="9" width="6" height="6" rx="1.2" fill="currentColor" opacity="0.5"/>
+                </svg>
+                Dashboard
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Penjualan</div>
+            <a href="{{ route('transaksi.index') }}" class="nav-item {{ request()->routeIs('transaksi.*') ? 'active' : '' }}">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 3h12M2 8h12M2 13h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                </svg>
+                Daftar Transaksi
+            </a>
+            <a href="{{ route('transaksi.create') }}" class="nav-item {{ request()->routeIs('transaksi.create') ? 'active' : '' }}">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                Buat Transaksi
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Inventaris</div>
+            <a href="{{ route('barang.index') }}" class="nav-item {{ request()->routeIs('barang.*') ? 'active' : '' }}">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M5 5V3.5A2.5 2.5 0 0 1 8 1v0a2.5 2.5 0 0 1 3 2.5V5" stroke="currentColor" stroke-width="1.3"/>
+                </svg>
+                Data Barang
+                @if(isset($stockAlertCount) && $stockAlertCount > 0)
+                    <span class="nav-badge">{{ $stockAlertCount }}</span>
+                @endif
+            </a>
+            <a href="#" class="nav-item">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 12V5l5-3 5 3v7l-5 3-5-3z" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M8 14V8M3 5l5 3 5-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                Supplier
+            </a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-label">Laporan</div>
+            <a href="#" class="nav-item">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 12L5.5 7.5l3 3L11 5l3 4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Laporan Penjualan
+            </a>
+            <a href="#" class="nav-item">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M5 6h6M5 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                Laba Rugi
+            </a>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="user-avatar">{{ strtoupper(substr(Auth::user()->name ?? 'R', 0, 2)) }}</div>
+            <div>
+                <div class="user-name">{{ Auth::user()->name ?? 'Ratih' }}</div>
+                <div class="user-role">Administrator</div>
+            </div>
+        </div>
+        <form method="POST" action="{{ route('logout') }}" style="margin-top:6px;">
+            @csrf
+            <button type="submit" class="nav-item" style="width:100%;background:none;border:none;cursor:pointer;color:var(--text-secondary);font-family:var(--font);padding:6px 0;">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Keluar
+            </button>
+        </form>
+    </div>
+</aside>
+
+{{-- ── MAIN ── --}}
+<div class="main-wrapper">
+    <header class="topbar">
+        <div class="topbar-breadcrumb">
+            <span>Toko Ratih</span>
+            <span class="sep">›</span>
+            <span class="current">{{ $title ?? 'Dashboard' }}</span>
+        </div>
+        <div class="topbar-right">
+            <span class="topbar-date">{{ \Carbon\Carbon::now()->locale('id')->isoFormat('dddd, D MMMM YYYY') }}</span>
+            <button class="notif-btn" title="Notifikasi">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+                    <path d="M8 1.5A4.5 4.5 0 0 0 3.5 6v3L2 11h12l-1.5-2V6A4.5 4.5 0 0 0 8 1.5z" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M6.5 11.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.3"/>
+                </svg>
+                @if(isset($stockAlertCount) && $stockAlertCount > 0)
+                    <span class="notif-dot"></span>
+                @endif
+            </button>
+        </div>
+    </header>
+
+    <main class="page-content">
+        @if(session('success'))
+            <div class="alert alert-success">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3M8 10v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @yield('content')
+    </main>
+</div>
+
+@stack('scripts')
+</body>
 </html>

@@ -6,24 +6,26 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('transaksis', function (Blueprint $table) {
+        Schema::create('transaksi', function (Blueprint $table) {
             $table->id();
-            $table->date('tanggal');
-            $table->integer('total');
+            $table->string('kode_transaksi', 30)->unique();
+            $table->string('pelanggan', 100)->nullable();     // nama toko/warung pelanggan
+            $table->unsignedBigInteger('total_harga')->default(0);
+            $table->unsignedBigInteger('total_bayar')->default(0);
+            $table->bigInteger('kembalian')->default(0);
+            $table->enum('status', ['lunas', 'piutang', 'batal'])->default('lunas');
+            $table->text('catatan')->nullable();
+            $table->foreignId('user_id')->constrained()->onDelete('restrict');
             $table->timestamps();
+
+            $table->index(['created_at', 'status']); // untuk query laporan harian
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('transaksis');
+        Schema::dropIfExists('transaksi');
     }
 };
